@@ -1,31 +1,109 @@
+<?php 
+require 'db_connect.php';
+?>
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
-   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
-   <title>To Do List Log In</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>To-Do List</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body style="background-color:lightblue;">
-    <div class="container-fluid">
-     <div class="row justify-content-center align-items-center">
-        <div class="col-3 border border-info rounded" style="margin-top:200px; background-color:white;">
-            <form action="login.php" method="POST">
-              <img src="logo.jpg" alt="logo" width="250" height="150" class="mx-auto d-block mt-3">
-                <div class="form-group mt-5">
-                    <input class="form-control form-control-lg" placeholder="test@email.com" type="email" required>
+<body>
+    <div class="main-section">
+       <div class="add-section">
+          <form action="CRUD/create.php" method="POST" autocomplete="off">
+             <?php if(isset($_GET['mess']) && $_GET['mess'] == 'error'){ ?>
+                <input type="text" 
+                     name="title" 
+                     style="border-color: #ff6666"
+                     placeholder="This field is required" />
+              <button type="submit">Add &nbsp; <span>&#43;</span></button>
+
+             <?php }else{ ?>
+              <input type="text" 
+                     name="title" 
+                     placeholder="Fill your tasklist here" />
+              <button type="submit">Add &nbsp; <span>&#43;</span></button>
+             <?php } ?>
+          </form>
+       </div>
+       <?php 
+          $todos = $conn->query("SELECT * FROM todos ORDER BY id DESC");
+       ?>
+       <div class="show-todo-section">
+            <?php if($todos->rowCount() <= 0){ ?>
+                <div class="todo-item">
+                    <div class="empty">
+                        <img src="img/todo.png" width="50%" />
+                    </div>
                 </div>
-                <div class="form-group">
-                    <input class="form-control form-control-lg" placeholder="Password" type="password" required>
+            <?php } ?>
+
+            <?php while($todo = $todos->fetch(PDO::FETCH_ASSOC)) { ?>
+                <div class="todo-item">
+                    <span id="<?php echo $todo['id']; ?>"
+                          class="remove-to-do">x</span>
+                    <?php if($todo['checked']){ ?> 
+                        <input type="checkbox"
+                               class="check-box"
+                               data-todo-id ="<?php echo $todo['id']; ?>"
+                               checked />
+                        <h2 class="checked"><?php echo $todo['title'] ?></h2>
+                    <?php }else { ?>
+                        <input type="checkbox"
+                               data-todo-id ="<?php echo $todo['id']; ?>"
+                               class="check-box" />
+                        <h2><?php echo $todo['title'] ?></h2>
+                    <?php } ?>
+                    <br>
+                    <input type="text" placeholder="What do you need to do?">
+                    <small>created: <?php echo $todo['date_time'] ?></small> 
                 </div>
-                <div class="form-group mb-3">
-                    <a href="login.php" class="btn btn-info btn-lg btn-block" role="button" aria-disabled="true">Sign In</a>
-                </div>
-                <div class="form-group">
-                  <span style="color:black">No account?</span><a class="ml-2" href="#">Register now!</a>
-                </div>         
-            </form>
-        </div>
+            <?php } ?>
+       </div>
     </div>
-</div>
- </body>
+
+    <script src="js/jquery-3.2.1.min.js"></script>
+
+    <script>
+        $(document).ready(function(){
+            $('.remove-to-do').click(function(){
+                const id = $(this).attr('id');
+                
+                $.post("CRUD/delete.php", 
+                      {
+                          id: id
+                      },
+                      (data)  => {
+                         if(data){
+                             $(this).parent().hide(600);
+                         }
+                      }
+                );
+            });
+
+            $(".check-box").click(function(e){
+                const id = $(this).attr('data-todo-id');
+                
+                $.post('CRUD/check.php', 
+                      {
+                          id: id
+                      },
+                      (data) => {
+                          if(data != 'error'){
+                              const h2 = $(this).next();
+                              if(data === '1'){
+                                  h2.removeClass('checked');
+                              }else {
+                                  h2.addClass('checked');
+                              }
+                          }
+                      }
+                );
+            });
+        });
+    </script>
+</body>
 </html>
